@@ -2,27 +2,38 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="bg-gray-800 shadow rounded-lg overflow-hidden">
-      <div class="p-4 space-y-4">
+      <div class="p-4">
+        <div class="flex justify-end mb-4">
+          <button 
+            @click="playNotificationSound" 
+            class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+          >
+            Test Notification Sound
+          </button>
+        </div>
         <div 
           v-for="message in limitedMessages" 
           :key="message.id" 
-          class="border-b border-gray-700 last:border-0 pb-4 last:pb-0"
+          class="border-b border-gray-700 last:border-0 pb-4 last:pb-0 mb-4"
           :class="[hasKeywords(message.text) ? 'bg-blue-900/20' : '']"
         >
-          <div class="flex items-start">
+          <div class="flex items-start px-4">
             <div class="flex-1">
-              <p class="text-sm font-medium text-gray-200">
-                {{ message.sender }}
-              </p>
-              <p class="text-sm text-gray-400">
-                {{ new Date(message.date).toLocaleString() }}
-              </p>
-              <div class="mt-1 text-sm text-gray-300">
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-medium text-gray-200">
+                  {{ message.sender }}
+                </p>
+                <div class="flex items-center gap-3 text-sm text-gray-400">
+                  <span v-if="message.chat">{{ message.chat }}</span>
+                  <span>{{ new Date(message.date).toLocaleString() }}</span>
+                </div>
+              </div>
+              <div class="mt-3 text-sm text-gray-300">
                 {{ message.text }}
               </div>
               <div 
                 v-if="getMatchedKeywords(message.text).length > 0"
-                class="mt-2 text-sm bg-blue-900/40 text-blue-300 px-3 py-1 rounded-md inline-block"
+                class="mt-3 text-sm bg-blue-900/40 text-blue-300 px-3 py-1.5 rounded-md inline-block"
               >
                 Matched keywords: {{ getMatchedKeywords(message.text).join(', ') }}
               </div>
@@ -60,18 +71,39 @@ export default defineComponent({
     const settingsStore = useSettingsStore();
     const { messageLimit, keywords, channels } = storeToRefs(settingsStore);
     const messages = ref<Message[]>([]);
+    const notificationSound = new Audio('/beep-10.mp3');
+    let audioPermissionGranted = ref(false);
+
+    // Initialize audio context and request permission
+    const initializeAudio = async () => {
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+        audioPermissionGranted.value = true;
+      } catch (error) {
+        console.error('Error initializing audio:', error);
+      }
+    };
 
     // Load messages from local storage on mount
     onMounted(async () => {
+      console.log('Component mounted');
       if (!telegramService.isLoggedIn()) {
+        console.log('Not logged in, redirecting to login');
         router.push('/login');
         return;
       }
 
+      // Load audio context
+      await initializeAudio();
+
       const savedMessages = localStorage.getItem('telegramMessages');
+      console.log('Saved messages from storage:', savedMessages);
       if (savedMessages) {
         messages.value = JSON.parse(savedMessages);
-        console.log('Loaded messages from storage:', messages.value);
+        console.log('Loaded messages into state:', messages.value);
       }
 
       try {
@@ -96,6 +128,13 @@ export default defineComponent({
           };
           console.log('Processed new message in view:', newMessage);
 
+          // Check if message matches keywords and play sound
+          if (keywords.value.length > 0 && keywords.value.some(keyword => 
+            newMessage.text.toLowerCase().includes(keyword.toLowerCase())
+          )) {
+            playNotificationSound();
+          }
+
           messages.value = [newMessage, ...messages.value];
           console.log('Updated messages array:', messages.value);
           saveMessages();
@@ -108,19 +147,28 @@ export default defineComponent({
 
     // Compute limited messages based on settings and filters
     const limitedMessages = computed(() => {
+      console.log('Computing limited messages');
+      console.log('Current messages:', messages.value);
+      console.log('Current channels:', channels.value);
+      console.log('Current message limit:', messageLimit.value);
+      
       let filteredMessages = messages.value;
       
       // Apply channel filter if channels are specified
       if (channels.value.length > 0) {
+        console.log('Applying channel filter');
         filteredMessages = filteredMessages.filter(message => 
           channels.value.some(channel => 
             message.chat?.toLowerCase().includes(channel.toLowerCase())
           )
         );
+        console.log('After channel filter:', filteredMessages);
       }
 
       // Return limited number of filtered messages
-      return filteredMessages.slice(0, messageLimit.value);
+      const result = filteredMessages.slice(0, messageLimit.value);
+      console.log('Final filtered messages:', result);
+      return result;
     });
 
     // Save messages to local storage whenever they change
@@ -145,6 +193,21 @@ export default defineComponent({
       );
     };
 
+    // Play notification sound if message matches keywords
+    const playNotificationSound = async () => {
+      try {
+        if (!audioPermissionGranted.value) {
+          await initializeAudio();
+        }
+        notificationSound.currentTime = 0;
+        await notificationSound.play();
+      } catch (error) {
+        console.error('Error playing notification sound:', error);
+        // If permission denied, we'll try to initialize audio again next time
+        audioPermissionGranted.value = false;
+      }
+    };
+
     // Watch for changes in message limit and update storage
     watch(() => messageLimit.value, saveMessages);
 
@@ -153,6 +216,7 @@ export default defineComponent({
       limitedMessages,
       hasKeywords,
       getMatchedKeywords,
+      playNotificationSound,
     };
   },
 });
