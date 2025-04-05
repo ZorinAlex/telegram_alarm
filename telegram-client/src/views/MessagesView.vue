@@ -49,6 +49,7 @@ interface Message {
   sender: string;
   text: string;
   date: number;
+  chat?: string;
 }
 
 export default defineComponent({
@@ -57,7 +58,7 @@ export default defineComponent({
     const router = useRouter();
     const telegramService = TelegramService.getInstance();
     const settingsStore = useSettingsStore();
-    const { messageLimit, keywords } = storeToRefs(settingsStore);
+    const { messageLimit, keywords, channels } = storeToRefs(settingsStore);
     const messages = ref<Message[]>([]);
 
     // Load messages from local storage on mount
@@ -90,6 +91,7 @@ export default defineComponent({
             id: message.id,
             sender: message.sender,
             text: message.text,
+            chat: message.chat,
             date: message.date * 1000, // Convert to milliseconds
           };
           console.log('Processed new message in view:', newMessage);
@@ -104,9 +106,21 @@ export default defineComponent({
       }
     });
 
-    // Compute limited messages based on settings
+    // Compute limited messages based on settings and filters
     const limitedMessages = computed(() => {
-      return messages.value.slice(0, messageLimit.value);
+      let filteredMessages = messages.value;
+      
+      // Apply channel filter if channels are specified
+      if (channels.value.length > 0) {
+        filteredMessages = filteredMessages.filter(message => 
+          channels.value.some(channel => 
+            message.chat?.toLowerCase().includes(channel.toLowerCase())
+          )
+        );
+      }
+
+      // Return limited number of filtered messages
+      return filteredMessages.slice(0, messageLimit.value);
     });
 
     // Save messages to local storage whenever they change

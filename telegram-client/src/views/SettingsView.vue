@@ -7,21 +7,18 @@
       <!-- Message Limit Section -->
       <div>
         <h2 class="text-lg font-medium text-gray-200 mb-4">Message Display</h2>
-        <div>
-          <label for="messageLimit" class="block text-sm font-medium text-gray-200">
-            Number of messages to display
-          </label>
-          <div class="mt-1">
-            <input
+        <div class="space-y-4">
+          <div class="flex gap-4">
+            <input 
               type="number"
-              id="messageLimit"
               v-model="messageLimit"
               min="1"
               max="1000"
-              class="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-600 bg-gray-700 text-gray-200 rounded-md"
+              class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-200"
+              placeholder="Number of messages to display"
             />
           </div>
-          <p class="mt-2 text-sm text-gray-400">
+          <p class="text-sm text-gray-400">
             This setting determines how many recent messages will be shown and stored locally.
           </p>
         </div>
@@ -71,6 +68,51 @@
           </p>
         </div>
       </div>
+
+      <!-- Channels Section -->
+      <div>
+        <h2 class="text-lg font-medium text-gray-200 mb-4">Channel Filtering</h2>
+        <div class="space-y-4">
+          <div class="flex gap-4">
+            <input 
+              v-model="newChannel" 
+              type="text" 
+              placeholder="Add channel name or ID"
+              @keyup.enter="addNewChannel"
+              class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-200"
+            >
+            <button 
+              @click="addNewChannel" 
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+            >
+              Add
+            </button>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <span 
+              v-for="(channel, index) in channels" 
+              :key="index" 
+              class="inline-flex items-center px-3 py-1 rounded-md text-sm bg-blue-900/40 text-blue-300"
+            >
+              {{ channel }}
+              <button 
+                @click="removeChannel(index)" 
+                class="ml-2 text-blue-400 hover:text-blue-200 focus:outline-none"
+                title="Remove channel"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          </div>
+
+          <p class="text-sm text-gray-400">
+            Only messages from these channels will be shown. If no channels are added, messages from all channels will be displayed.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -84,8 +126,9 @@ export default defineComponent({
   name: 'SettingsView',
   setup() {
     const settingsStore = useSettingsStore();
-    const { messageLimit, keywords } = storeToRefs(settingsStore);
+    const { messageLimit, keywords, channels } = storeToRefs(settingsStore);
     const newKeyword = ref('');
+    const newChannel = ref('');
 
     const addNewKeyword = () => {
       if (newKeyword.value.trim()) {
@@ -98,12 +141,27 @@ export default defineComponent({
       settingsStore.removeKeyword(index);
     };
 
+    const addNewChannel = () => {
+      if (newChannel.value.trim()) {
+        settingsStore.addChannel(newChannel.value.trim());
+        newChannel.value = '';
+      }
+    };
+
+    const removeChannel = (index: number) => {
+      settingsStore.removeChannel(index);
+    };
+
     return {
       messageLimit,
       keywords,
+      channels,
       newKeyword,
+      newChannel,
       addNewKeyword,
-      removeKeyword
+      removeKeyword,
+      addNewChannel,
+      removeChannel
     };
   },
 });
