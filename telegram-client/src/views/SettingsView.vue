@@ -113,6 +113,116 @@
           </p>
         </div>
       </div>
+
+      <!-- Sound Mappings Section -->
+      <div class="space-y-6">
+        <div class="bg-gray-800 shadow rounded-lg">
+          <h3 class="text-lg font-medium text-gray-200 mb-4">Sound Notifications</h3>
+          
+          <!-- Default Sound Selection -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">Default Sound</label>
+            <div class="flex gap-4">
+              <select 
+                v-model="defaultSound"
+                class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+              >
+                <option v-for="sound in availableSounds" :key="sound" :value="sound">
+                  {{ sound }}
+                </option>
+              </select>
+              <button 
+                @click="testSound(defaultSound)"
+                class="px-3 py-2 text-gray-400 hover:text-gray-200 transition-colors"
+                title="Test Default Sound"
+              >
+                🔊 Test
+              </button>
+            </div>
+            <p class="mt-2 text-sm text-gray-400">
+              This sound will play for messages that match keywords without a specific sound mapping.
+            </p>
+          </div>
+
+          <!-- Add New Sound Mapping -->
+          <div class="mb-6 space-y-4">
+            <div class="flex gap-4">
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Keywords (comma-separated)</label>
+                <input 
+                  v-model="newMappingKeywords" 
+                  type="text" 
+                  class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                  placeholder="Enter keywords..."
+                />
+              </div>
+              <div class="w-48">
+                <label class="block text-sm font-medium text-gray-300 mb-2">Sound</label>
+                <select 
+                  v-model="newMappingSound"
+                  class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                >
+                  <option v-for="sound in availableSounds" :key="sound" :value="sound">
+                    {{ sound }}
+                  </option>
+                </select>
+              </div>
+              <div class="flex items-end">
+                <button 
+                  @click="addNewSoundMapping"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Add Mapping
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Existing Sound Mappings -->
+          <div class="space-y-4">
+            <div 
+              v-for="(mapping, index) in soundMappings" 
+              :key="index"
+              class="flex items-center justify-between p-3 bg-gray-700 rounded-md"
+            >
+              <div class="flex-1">
+                <div class="flex items-center gap-4">
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-300">Keywords: {{ mapping.keywords.join(', ') }}</p>
+                    <p class="text-sm text-gray-400">Sound: {{ mapping.soundFile }}</p>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <button 
+                      @click="testSound(mapping.soundFile)"
+                      class="p-2 text-gray-400 hover:text-gray-200 transition-colors"
+                      title="Test Sound"
+                    >
+                      🔊
+                    </button>
+                    <button 
+                      @click="toggleMapping(index)"
+                      :class="[
+                        'p-2 transition-colors',
+                        mapping.enabled ? 'text-green-400 hover:text-green-300' : 'text-gray-500 hover:text-gray-400'
+                      ]"
+                      :title="mapping.enabled ? 'Disable' : 'Enable'"
+                    >
+                      {{ mapping.enabled ? '✓' : '✗' }}
+                    </button>
+                    <button 
+                      @click="removeSoundMapping(index)"
+                      class="p-2 text-red-400 hover:text-red-300 transition-colors"
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -121,14 +231,17 @@
 import { defineComponent, ref } from 'vue';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { storeToRefs } from 'pinia';
+import type { SoundMapping } from '@/stores/settingsStore';
 
 export default defineComponent({
   name: 'SettingsView',
   setup() {
     const settingsStore = useSettingsStore();
-    const { messageLimit, keywords, channels } = storeToRefs(settingsStore);
+    const { messageLimit, keywords, channels, soundMappings, availableSounds, defaultSound } = storeToRefs(settingsStore);
     const newKeyword = ref('');
     const newChannel = ref('');
+    const newMappingKeywords = ref('');
+    const newMappingSound = ref(availableSounds.value[0] || '');
 
     const addNewKeyword = () => {
       if (newKeyword.value.trim()) {
@@ -152,16 +265,60 @@ export default defineComponent({
       settingsStore.removeChannel(index);
     };
 
+    const addNewSoundMapping = () => {
+      if (newMappingKeywords.value && newMappingSound.value) {
+        const keywords = newMappingKeywords.value.split(',').map(k => k.trim()).filter(k => k);
+        if (keywords.length > 0) {
+          settingsStore.addSoundMapping({
+            keywords,
+            soundFile: newMappingSound.value,
+            enabled: true
+          });
+          newMappingKeywords.value = '';
+        }
+      }
+    };
+
+    const removeSoundMapping = (index: number) => {
+      settingsStore.removeSoundMapping(index);
+    };
+
+    const toggleMapping = (index: number) => {
+      const mapping = { ...soundMappings.value[index] };
+      mapping.enabled = !mapping.enabled;
+      settingsStore.updateSoundMapping(index, mapping);
+    };
+
+    const testSound = async (soundFile: string) => {
+      const audio = new Audio(`/${soundFile}`);
+      try {
+        audio.currentTime = 0;
+        await audio.play();
+      } catch (error) {
+        console.error('Error playing test sound:', error);
+      }
+    };
+
     return {
+      settingsStore,
       messageLimit,
       keywords,
       channels,
+      soundMappings,
+      availableSounds,
+      defaultSound,
       newKeyword,
       newChannel,
+      newMappingKeywords,
+      newMappingSound,
       addNewKeyword,
       removeKeyword,
       addNewChannel,
-      removeChannel
+      removeChannel,
+      addNewSoundMapping,
+      removeSoundMapping,
+      toggleMapping,
+      testSound
     };
   },
 });

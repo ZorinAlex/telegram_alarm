@@ -5,7 +5,7 @@
       <div class="p-4">
         <div class="flex justify-end mb-4">
           <button 
-            @click="playNotificationSound" 
+            @click="testSound('beep-10.mp3')" 
             class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
           >
             Test Notification Sound
@@ -69,9 +69,9 @@ export default defineComponent({
     const router = useRouter();
     const telegramService = TelegramService.getInstance();
     const settingsStore = useSettingsStore();
-    const { messageLimit, keywords, channels } = storeToRefs(settingsStore);
+    const { messageLimit, keywords, channels, soundMappings, defaultSound } = storeToRefs(settingsStore);
     const messages = ref<Message[]>([]);
-    const notificationSound = new Audio('/beep-10.mp3');
+    const notificationSounds = ref<{ [key: string]: HTMLAudioElement }>({});
     let audioPermissionGranted = ref(false);
 
     // Initialize audio context and request permission
@@ -82,6 +82,11 @@ export default defineComponent({
           await audioContext.resume();
         }
         audioPermissionGranted.value = true;
+
+        // Initialize all sound files
+        settingsStore.availableSounds.forEach(soundFile => {
+          notificationSounds.value[soundFile] = new Audio(`/${soundFile}`);
+        });
       } catch (error) {
         console.error('Error initializing audio:', error);
       }
@@ -128,12 +133,8 @@ export default defineComponent({
           };
           console.log('Processed new message in view:', newMessage);
 
-          // Check if message matches keywords and play sound
-          if (keywords.value.length > 0 && keywords.value.some(keyword => 
-            newMessage.text.toLowerCase().includes(keyword.toLowerCase())
-          )) {
-            playNotificationSound();
-          }
+          // Play notification sound if message matches any sound mapping
+          playNotificationSound(newMessage.text);
 
           messages.value = [newMessage, ...messages.value];
           console.log('Updated messages array:', messages.value);
@@ -194,16 +195,54 @@ export default defineComponent({
     };
 
     // Play notification sound if message matches keywords
-    const playNotificationSound = async () => {
+    const playNotificationSound = async (text: string) => {
       try {
         if (!audioPermissionGranted.value) {
           await initializeAudio();
         }
-        notificationSound.currentTime = 0;
-        await notificationSound.play();
+
+        // Check if any keywords match
+        const hasMatchingKeywords = keywords.value.some(keyword => 
+          text.toLowerCase().includes(keyword.toLowerCase())
+        );
+
+        if (hasMatchingKeywords) {
+          // Find matching sound mapping
+          const matchingMapping = soundMappings.value.find(mapping => 
+            mapping.enabled && mapping.keywords.some(keyword => 
+              text.toLowerCase().includes(keyword.toLowerCase())
+            )
+          );
+
+          // Use either the matching sound or default sound
+          const soundToPlay = matchingMapping ? 
+            notificationSounds.value[matchingMapping.soundFile] : 
+            notificationSounds.value[defaultSound.value];
+
+          if (soundToPlay) {
+            soundToPlay.currentTime = 0;
+            await soundToPlay.play();
+          }
+        }
       } catch (error) {
         console.error('Error playing notification sound:', error);
-        // If permission denied, we'll try to initialize audio again next time
+        audioPermissionGranted.value = false;
+      }
+    };
+
+    // Test specific sound
+    const testSound = async (soundFile: string) => {
+      try {
+        if (!audioPermissionGranted.value) {
+          await initializeAudio();
+        }
+        const sound = notificationSounds.value[soundFile];
+        if (sound) {
+          sound.currentTime = 0;
+          await sound.play();
+        }
+      } catch (error) {
+        console.error('Error playing test sound:', error);
         audioPermissionGranted.value = false;
       }
     };
@@ -216,7 +255,7 @@ export default defineComponent({
       limitedMessages,
       hasKeywords,
       getMatchedKeywords,
-      playNotificationSound,
+      testSound,
     };
   },
 });
