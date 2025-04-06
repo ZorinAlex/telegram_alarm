@@ -10,6 +10,7 @@
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false"
   },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "buffer": "^6.0.3",
     "input": "^1.0.1",
     "os-browserify": "^0.3.0",

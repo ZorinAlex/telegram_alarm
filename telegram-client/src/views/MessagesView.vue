@@ -20,9 +20,10 @@
           </div>
           <button 
             @click="testSound('beep-10.mp3')" 
-            class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
+            class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
           >
-            Test Notification Sound
+            <i class="mdi mdi-volume-high text-lg"></i>
+            Notification Sound
           </button>
         </div>
         <!-- Loading state -->

@@ -56,9 +56,7 @@
                 class="ml-2 text-blue-400 hover:text-blue-200 focus:outline-none"
                 title="Remove keyword"
               >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <i class="mdi mdi-close text-lg"></i>
               </button>
             </span>
           </div>
@@ -106,9 +104,7 @@
                 @click="removeChannel(index)"
                 class="ml-2 text-red-400 hover:text-red-200 focus:outline-none"
               >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <i class="mdi mdi-close text-lg"></i>
               </button>
             </span>
           </div>
@@ -137,10 +133,10 @@
               </select>
               <button 
                 @click="testSound(defaultSound)"
-                class="px-3 py-2 text-gray-400 hover:text-gray-200 transition-colors"
+                class="px-3 py-2 text-gray-400 hover:text-gray-200 transition-colors inline-flex items-center gap-2"
                 title="Test Default Sound"
               >
-                🔊 Test
+                <i class="mdi mdi-volume-high text-lg"></i>
               </button>
             </div>
             <p class="mt-2 text-sm text-gray-400">
@@ -180,7 +176,7 @@
                     class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     :disabled="!selectedKeyword"
                   >
-                    +
+                    Add
                   </button>
                 </div>
               </div>
@@ -197,10 +193,10 @@
               {{ mapping.keywords[0] }} → {{ mapping.soundFile }}
               <button 
                 @click="testSound(mapping.soundFile)"
-                class="ml-2 text-blue-400 hover:text-blue-200 focus:outline-none"
+                class="px-3 py-2 text-gray-400 hover:text-gray-200 transition-colors inline-flex items-center gap-2"
                 title="Test Sound"
               >
-                🔊
+                <i class="mdi mdi-volume-high text-lg"></i>
               </button>
               <button 
                 @click="toggleMapping(index)"
@@ -210,16 +206,14 @@
                 ]"
                 :title="mapping.enabled ? 'Disable' : 'Enable'"
               >
-                {{ mapping.enabled ? '✓' : '✗' }}
+                <i class="mdi" :class="[mapping.enabled ? 'mdi-check' : 'mdi-close']"></i>
               </button>
               <button 
                 @click="removeSoundMapping(index)"
-                class="ml-1 text-blue-400 hover:text-blue-200 focus:outline-none"
-                title="Remove mapping"
+                class="ml-2 text-red-400 hover:text-red-200 focus:outline-none"
+                title="Remove sound mapping"
               >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <i class="mdi mdi-close text-lg"></i>
               </button>
             </span>
           </div>
