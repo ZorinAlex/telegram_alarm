@@ -62,6 +62,16 @@
               </svg>
               <span>{{ isLoading ? $t('login.loading') : buttonText }}</span>
             </button>
+
+            <div v-if="loginSuccess" class="text-center mt-4">
+              <p class="text-green-500 dark:text-green-400">{{ $t('login.loginSuccess') }}</p>
+              <button 
+                @click="goToMessages" 
+                class="mt-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                {{ $t('login.goToMessages') }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -87,12 +97,17 @@ export default defineComponent({
     const phoneNumber = ref('');
     const verificationCode = ref('');
     const password = ref('');
+    const loginSuccess = ref(false);
     let codeResolver: ((code: string) => void) | null = null;
 
     const buttonText = computed(() => {
       if (showCodeInput.value) return t('login.submitCodeButton');
       return t('login.loginButton');
     });
+
+    const goToMessages = () => {
+      router.push('/messages');
+    };
 
     const handleVerificationCode = async () => {
       if (!verificationCode.value || !password.value || !codeResolver) return;
@@ -105,14 +120,19 @@ export default defineComponent({
         codeResolver = null;
         
         console.log('Login successful, waiting for session to be saved...');
-        // Wait a moment for the session to be properly saved
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait for the session to be properly saved with retries
+        let retries = 0;
+        const maxRetries = 10;
+        while (!telegramService.isLoggedIn() && retries < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          retries++;
+        }
         
         if (telegramService.isLoggedIn()) {
-          console.log('Session confirmed, redirecting to messages...');
+          console.log('Session confirmed, navigating to messages');
           router.push('/messages');
         } else {
-          console.error('Login seemed successful but session was not saved');
+          console.error('Login seemed successful but session was not saved after multiple retries');
         }
       } catch (error) {
         console.error('Error during login:', error);
@@ -131,11 +151,10 @@ export default defineComponent({
         await telegramService.initializeClient();
         
         console.log('Client initialized, attempting login...');
-        const result = await telegramService.login(phoneNumber.value);
+        await telegramService.login(phoneNumber.value);
         
-        // If login is successful without 2FA (using saved session)
         if (telegramService.isLoggedIn() && !showCodeInput.value) {
-          console.log('Login successful with saved session, redirecting...');
+          console.log('Login successful with saved session, navigating to messages');
           router.push('/messages');
         }
       } catch (error) {
@@ -186,8 +205,10 @@ export default defineComponent({
       verificationCode,
       password,
       buttonText,
+      loginSuccess,
       handleVerificationCode,
-      handleButtonClick
+      handleButtonClick,
+      goToMessages
     };
   }
 });

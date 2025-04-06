@@ -89,7 +89,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref } from 'vue';
+import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { TelegramService } from '@/services/TelegramService';
 import { useI18n } from 'vue-i18n';
@@ -101,8 +101,22 @@ export default defineComponent({
     const telegramService = TelegramService.getInstance();
     const isMobileMenuOpen = ref(false);
     const { t } = useI18n();
+    const isLoggedIn = ref(false);
 
-    const isLoggedIn = computed(() => telegramService.isLoggedIn());
+    const updateLoginState = () => {
+      console.log('Updating login state...');
+      isLoggedIn.value = telegramService.isLoggedIn();
+      console.log('New login state:', isLoggedIn.value);
+    };
+
+    onMounted(() => {
+      updateLoginState();
+      window.addEventListener('telegramSessionChanged', updateLoginState);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('telegramSessionChanged', updateLoginState);
+    });
 
     const handleLogout = async () => {
       try {

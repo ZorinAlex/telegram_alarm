@@ -104,6 +104,11 @@ export class TelegramService {
         this.currentPassword = password;
     }
 
+    private notifySessionChanged() {
+        console.log('Notifying session change...');
+        window.dispatchEvent(new CustomEvent('telegramSessionChanged'));
+    }
+
     public async login(phoneNumber: string): Promise<void> {
         if (!this.client) {
             console.error('Client not initialized before login attempt');
@@ -154,6 +159,7 @@ export class TelegramService {
                         const sessionString = this.session.save();
                         console.log('Saving session to localStorage');
                         localStorage.setItem('telegramSession', sessionString);
+                        this.notifySessionChanged();
                     }
                 } else {
                     // Session login failed
@@ -203,6 +209,7 @@ export class TelegramService {
         try {
             await this.disconnect();
             localStorage.removeItem('telegramSession');
+            this.notifySessionChanged();
             this.client = null;
             this.session = null;
         } catch (error) {
