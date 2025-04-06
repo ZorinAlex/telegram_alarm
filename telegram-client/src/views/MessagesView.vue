@@ -3,7 +3,21 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="bg-gray-800 shadow rounded-lg overflow-hidden">
       <div class="p-4">
-        <div class="flex justify-end mb-4">
+        <div class="flex justify-end mb-4 items-center gap-4">
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-300">Show matched only</label>
+            <button
+              @click="showMatchedOnly = !showMatchedOnly"
+              class="relative inline-flex h-6 w-11 items-center rounded-full"
+              :class="[showMatchedOnly ? 'bg-blue-600' : 'bg-gray-600']"
+            >
+              <span class="sr-only">Show matched messages only</span>
+              <span
+                class="inline-block h-4 w-4 transform rounded-full bg-white transition"
+                :class="[showMatchedOnly ? 'translate-x-6' : 'translate-x-1']"
+              />
+            </button>
+          </div>
           <button 
             @click="testSound('beep-10.mp3')" 
             class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors"
@@ -27,11 +41,20 @@
               <div class="flex-1">
                 <div class="flex items-center justify-between">
                   <p class="text-sm font-medium text-gray-200">
-                    {{ message.sender }}
-                    <span class="ml-2 text-xs text-gray-400">(ID: {{ message.id }})</span>
+                    <template v-if="message.chat === 'Unknown Chat'">
+                      {{ message.sender }} <span class="text-xs text-gray-400">(ID: {{ message.senderId }})</span>
+                    </template>
+                    <template v-else>
+                      <span>{{ message.chat }} <span class="text-xs text-gray-400">(ID: {{ message.chatId }})</span></span>
+                    </template>
                   </p>
                   <div class="flex items-center gap-3 text-sm text-gray-400">
-                    <span v-if="message.chat">{{ message.chat }}</span>
+                    <template v-if="message.chat === 'Unknown Chat'">
+                      <span>{{ message.chat }} <span class="text-xs">(ID: {{ message.chatId }})</span></span>
+                    </template>
+                    <template v-else>
+                      {{ message.sender }} <span class="text-xs">(ID: {{ message.senderId }})</span>
+                    </template>
                     <span>{{ new Date(message.date).toLocaleString() }}</span>
                   </div>
                 </div>
@@ -65,6 +88,8 @@ import { storeToRefs } from 'pinia';
 
 interface Message {
   id: number;
+  senderId: string | number;
+  chatId: string | number;
   sender: string;
   text: string;
   date: number;
@@ -82,6 +107,7 @@ export default defineComponent({
     const notificationSounds = ref<{ [key: string]: HTMLAudioElement }>({});
     const audioPermissionGranted = ref(false);
     const isLoading = ref(true);
+    const showMatchedOnly = ref(false);
 
     // Initialize audio context and request permission
     const initializeAudio = async () => {
@@ -126,6 +152,8 @@ export default defineComponent({
           console.log('New message received in view:', message);
           const newMessage: Message = {
             id: message.id,
+            senderId: message.senderId,
+            chatId: message.chatId,
             sender: message.sender,
             text: message.text,
             chat: message.chat,
@@ -133,13 +161,23 @@ export default defineComponent({
           };
           console.log('Processed new message in view:', newMessage);
 
-          if (hasKeywords(newMessage.text)) {
-            playNotificationSound(newMessage.text);
-          }
+          // Check if message is from an excluded channel
+          const isExcluded = channels.value.some(channel => 
+            newMessage.chatId?.toString() === channel.id
+          );
 
-          messages.value = [newMessage, ...messages.value.slice(0, messageLimit.value - 1)];
-          console.log('Updated messages array (limited):', messages.value);
-          saveMessages();
+          if (!isExcluded) {
+            if (hasKeywords(newMessage.text)) {
+              playNotificationSound(newMessage.text);
+            }
+
+            messages.value = [newMessage, ...messages.value];
+            // Trim messages array after adding new message
+            if (messages.value.length > messageLimit.value * 2) {
+              messages.value = messages.value.slice(0, messageLimit.value);
+            }
+            saveMessages();
+          }
         });
 
         return true;
@@ -187,20 +225,28 @@ export default defineComponent({
     const limitedMessages = computed(() => {
       console.log('Computing limited messages');
       console.log('Current messages:', messages.value);
-      console.log('Current channels:', channels.value);
+      console.log('Current channels to exclude:', channels.value);
       console.log('Current message limit:', messageLimit.value);
+      console.log('Show matched only:', showMatchedOnly.value);
       
       let filteredMessages = messages.value;
       
-      // Apply channel filter if channels are specified
+      // Apply channel filter to exclude specified channels
       if (channels.value.length > 0) {
-        console.log('Applying channel filter');
+        console.log('Applying channel exclusion filter');
         filteredMessages = filteredMessages.filter(message => 
-          channels.value.some(channel => 
-            message.chat?.toLowerCase().includes(channel.toLowerCase())
+          !channels.value.some(channel => 
+            message.chatId?.toString() === channel.id
           )
         );
-        console.log('After channel filter:', filteredMessages);
+        console.log('After channel exclusion filter:', filteredMessages);
+      }
+
+      // Apply keyword filter if showMatchedOnly is true
+      if (showMatchedOnly.value) {
+        console.log('Applying keyword filter');
+        filteredMessages = filteredMessages.filter(message => hasKeywords(message.text));
+        console.log('After keyword filter:', filteredMessages);
       }
 
       // Return limited number of filtered messages
@@ -211,8 +257,11 @@ export default defineComponent({
 
     // Save messages to local storage whenever they change
     const saveMessages = () => {
-      // Only save up to messageLimit messages
-      localStorage.setItem('telegramMessages', JSON.stringify(messages.value));
+      // Only save up to messageLimit messages after applying filters
+      const messagesToSave = messages.value.filter(message =>
+        !channels.value.some(channel => message.chatId?.toString() === channel.id)
+      ).slice(0, messageLimit.value);
+      localStorage.setItem('telegramMessages', JSON.stringify(messagesToSave));
     };
 
     // Check if message contains any keywords
@@ -295,6 +344,7 @@ export default defineComponent({
       getMatchedKeywords,
       testSound,
       isLoading,
+      showMatchedOnly,
     };
   },
 });

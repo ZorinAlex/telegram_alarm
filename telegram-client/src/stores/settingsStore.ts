@@ -1,5 +1,5 @@
-import { ref, watch } from 'vue';
 import { defineStore } from 'pinia';
+import { ref, watch } from 'vue';
 
 export interface SoundMapping {
   keywords: string[];
@@ -7,64 +7,49 @@ export interface SoundMapping {
   enabled: boolean;
 }
 
-export const useSettingsStore = defineStore('settings', () => {
-  const messageLimit = ref(parseInt(localStorage.getItem('messageLimit') || '50'));
-  const keywords = ref<string[]>(JSON.parse(localStorage.getItem('telegramKeywords') || '["solana", "pump", "airdrop"]'));
-  const channels = ref<string[]>(JSON.parse(localStorage.getItem('telegramChannels') || '[]'));
-  const soundMappings = ref<SoundMapping[]>(JSON.parse(localStorage.getItem('telegramSoundMappings') || '[]'));
-  const availableSounds = ref<string[]>(['beep-10.mp3', 'button-20.mp3']);
-  
-  // Ensure default sound is always set to first available sound if not already set
-  const storedDefaultSound = localStorage.getItem('telegramDefaultSound');
-  const defaultSound = ref<string>(
-    storedDefaultSound && availableSounds.value.includes(storedDefaultSound) 
-      ? storedDefaultSound 
-      : availableSounds.value[0]
-  );
+export interface Channel {
+  name: string;
+  id: string;
+}
 
-  // Save initial default sound if not already set
-  if (!storedDefaultSound || !availableSounds.value.includes(storedDefaultSound)) {
-    localStorage.setItem('telegramDefaultSound', defaultSound.value);
-  }
+export const useSettingsStore = defineStore('settings', () => {
+  // Initialize with values from localStorage or defaults
+  const savedSettings = localStorage.getItem('telegram-settings');
+  const initialSettings = savedSettings ? JSON.parse(savedSettings) : {
+    messageLimit: 10,
+    keywords: [],
+    channels: [],
+    soundMappings: [],
+    defaultSound: 'beep-10.mp3'
+  };
+
+  const messageLimit = ref(initialSettings.messageLimit);
+  const keywords = ref<string[]>(initialSettings.keywords);
+  const channels = ref<Channel[]>(initialSettings.channels);
+  const soundMappings = ref<SoundMapping[]>(initialSettings.soundMappings);
+  const defaultSound = ref(initialSettings.defaultSound);
+  const availableSounds = ref([
+    'beep-10.mp3',
+    'button-20.mp3',
+  ]);
 
   // Watch for changes and save to localStorage
-  watch(messageLimit, (newLimit) => {
-    localStorage.setItem('messageLimit', newLimit.toString());
-  });
-
-  watch(keywords, (newKeywords) => {
-    localStorage.setItem('telegramKeywords', JSON.stringify(newKeywords));
-  }, { deep: true });
-
-  watch(channels, (newChannels) => {
-    localStorage.setItem('telegramChannels', JSON.stringify(newChannels));
-  }, { deep: true });
-
-  watch(soundMappings, (newMappings) => {
-    localStorage.setItem('telegramSoundMappings', JSON.stringify(newMappings));
-  }, { deep: true });
-
-  watch(defaultSound, (newSound) => {
-    // Only allow setting default sound to an available sound
-    if (availableSounds.value.includes(newSound)) {
-      localStorage.setItem('telegramDefaultSound', newSound);
-    } else {
-      // Reset to first available sound if invalid
-      defaultSound.value = availableSounds.value[0];
-      localStorage.setItem('telegramDefaultSound', availableSounds.value[0]);
-    }
-  });
-
-  // Watch available sounds to ensure default sound remains valid
-  watch(availableSounds, (newSounds) => {
-    if (!newSounds.includes(defaultSound.value)) {
-      defaultSound.value = newSounds[0];
-      localStorage.setItem('telegramDefaultSound', newSounds[0]);
-    }
-  });
+  watch(
+    [messageLimit, keywords, channels, soundMappings, defaultSound],
+    ([newLimit, newKeywords, newChannels, newMappings, newSound]) => {
+      localStorage.setItem('telegram-settings', JSON.stringify({
+        messageLimit: newLimit,
+        keywords: newKeywords,
+        channels: newChannels,
+        soundMappings: newMappings,
+        defaultSound: newSound
+      }));
+    },
+    { deep: true }
+  );
 
   const addKeyword = (keyword: string) => {
-    if (keyword && !keywords.value.includes(keyword)) {
+    if (!keywords.value.includes(keyword)) {
       keywords.value.push(keyword);
     }
   };
@@ -73,8 +58,8 @@ export const useSettingsStore = defineStore('settings', () => {
     keywords.value.splice(index, 1);
   };
 
-  const addChannel = (channel: string) => {
-    if (channel && !channels.value.includes(channel)) {
+  const addChannel = (channel: Channel) => {
+    if (!channels.value.some(ch => ch.id === channel.id)) {
       channels.value.push(channel);
     }
   };
@@ -95,21 +80,6 @@ export const useSettingsStore = defineStore('settings', () => {
     soundMappings.value[index] = mapping;
   };
 
-  const setDefaultSound = (soundFile: string) => {
-    if (availableSounds.value.includes(soundFile)) {
-      defaultSound.value = soundFile;
-    } else {
-      defaultSound.value = availableSounds.value[0];
-    }
-  };
-
-  const addAvailableSound = (soundFile: string) => {
-    if (!availableSounds.value.includes(soundFile)) {
-      availableSounds.value.push(soundFile);
-      localStorage.setItem('telegramAvailableSounds', JSON.stringify(availableSounds.value));
-    }
-  };
-
   return {
     messageLimit,
     keywords,
@@ -123,8 +93,6 @@ export const useSettingsStore = defineStore('settings', () => {
     removeChannel,
     addSoundMapping,
     removeSoundMapping,
-    updateSoundMapping,
-    setDefaultSound,
-    addAvailableSound
+    updateSoundMapping
   };
 }); 

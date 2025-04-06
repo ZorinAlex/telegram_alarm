@@ -71,35 +71,40 @@
 
       <!-- Channels Section -->
       <div>
-        <h2 class="text-lg font-medium text-gray-200 mb-4">Channel Filtering</h2>
+        <h3 class="text-lg font-medium text-gray-200 mb-4">Excluded Channels</h3>
         <div class="space-y-4">
           <div class="flex gap-4">
-            <input 
-              v-model="newChannel" 
-              type="text" 
-              placeholder="Add channel name or ID"
-              @keyup.enter="addNewChannel"
-              class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-200"
-            >
+            <div class="flex-1 flex gap-2">
+              <input 
+                v-model="newChannelName"
+                type="text"
+                class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                placeholder="Channel name"
+              />
+              <input 
+                v-model="newChannelId"
+                type="text"
+                class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                placeholder="Channel ID"
+              />
+            </div>
             <button 
-              @click="addNewChannel" 
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              @click="addNewChannel"
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               Add
             </button>
           </div>
-
           <div class="flex flex-wrap gap-2">
             <span 
               v-for="(channel, index) in channels" 
-              :key="index" 
-              class="inline-flex items-center px-3 py-1 rounded-md text-sm bg-blue-900/40 text-blue-300"
+              :key="index"
+              class="inline-flex items-center px-3 py-1 rounded-md text-sm bg-red-900/40 text-red-300"
             >
-              {{ channel }}
+              {{ channel.name }} (ID: {{ channel.id }})
               <button 
-                @click="removeChannel(index)" 
-                class="ml-2 text-blue-400 hover:text-blue-200 focus:outline-none"
-                title="Remove channel"
+                @click="removeChannel(index)"
+                class="ml-2 text-red-400 hover:text-red-200 focus:outline-none"
               >
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -107,9 +112,8 @@
               </button>
             </span>
           </div>
-
           <p class="text-sm text-gray-400">
-            Only messages from these channels will be shown. If no channels are added, messages from all channels will be displayed.
+            Messages from these channels will be hidden from the messages page. Add both channel name and ID.
           </p>
         </div>
       </div>
@@ -229,7 +233,7 @@
 import { defineComponent, ref, computed } from 'vue';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { storeToRefs } from 'pinia';
-import type { SoundMapping } from '@/stores/settingsStore';
+import type { SoundMapping, Channel } from '@/stores/settingsStore';
 
 export default defineComponent({
   name: 'SettingsView',
@@ -237,9 +241,11 @@ export default defineComponent({
     const settingsStore = useSettingsStore();
     const { messageLimit, keywords, channels, soundMappings, availableSounds, defaultSound } = storeToRefs(settingsStore);
     const newKeyword = ref('');
-    const newChannel = ref('');
+    const newChannelName = ref('');
+    const newChannelId = ref('');
     const selectedKeyword = ref('');
     const newMappingSound = ref(availableSounds.value[0] || '');
+    const editingIndex = ref(-1);
 
     // Computed property to get available keywords (excluding ones already mapped)
     const availableKeywords = computed(() => {
@@ -259,9 +265,13 @@ export default defineComponent({
     };
 
     const addNewChannel = () => {
-      if (newChannel.value.trim()) {
-        settingsStore.addChannel(newChannel.value.trim());
-        newChannel.value = '';
+      if (newChannelName.value && newChannelId.value) {
+        settingsStore.addChannel({
+          name: newChannelName.value.trim(),
+          id: newChannelId.value.trim()
+        });
+        newChannelName.value = '';
+        newChannelId.value = '';
       }
     };
 
@@ -309,7 +319,8 @@ export default defineComponent({
       availableSounds,
       defaultSound,
       newKeyword,
-      newChannel,
+      newChannelName,
+      newChannelId,
       selectedKeyword,
       newMappingSound,
       availableKeywords,

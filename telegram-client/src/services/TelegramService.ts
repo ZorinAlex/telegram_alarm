@@ -249,6 +249,8 @@ export class TelegramService {
 
                         const processedMessage = {
                             id: message.id,
+                            senderId: ((sender as any)?.id?.toString()) || 'Unknown',
+                            chatId: ((chat as any)?.id?.toString()) || 'Unknown',
                             text: message.message,
                             sender: (sender as any)?.username || (sender as any)?.first_name || 'Unknown',
                             chat: (chat as any)?.title || 'Unknown Chat',
