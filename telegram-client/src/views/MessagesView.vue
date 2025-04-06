@@ -11,38 +11,46 @@
             Test Notification Sound
           </button>
         </div>
-        <div 
-          v-for="message in limitedMessages" 
-          :key="message.id" 
-          class="border-b border-gray-700 last:border-0 pb-4 last:pb-0 mb-4"
-          :class="[hasKeywords(message.text) ? 'bg-blue-900/20' : '']"
-        >
-          <div class="flex items-start px-4">
-            <div class="flex-1">
-              <div class="flex items-center justify-between">
-                <p class="text-sm font-medium text-gray-200">
-                  {{ message.sender }}
-                </p>
-                <div class="flex items-center gap-3 text-sm text-gray-400">
-                  <span v-if="message.chat">{{ message.chat }}</span>
-                  <span>{{ new Date(message.date).toLocaleString() }}</span>
+        <!-- Loading state -->
+        <div v-if="isLoading" class="text-center py-4 text-gray-400">
+          Loading messages...
+        </div>
+        <!-- Messages list -->
+        <template v-else>
+          <div 
+            v-for="message in limitedMessages" 
+            :key="message.id" 
+            class="border-b border-gray-700 last:border-0 pb-4 last:pb-0 mb-4"
+            :class="[hasKeywords(message.text) ? 'bg-blue-900/20' : '']"
+          >
+            <div class="flex items-start px-4">
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <p class="text-sm font-medium text-gray-200">
+                    {{ message.sender }}
+                    <span class="ml-2 text-xs text-gray-400">(ID: {{ message.id }})</span>
+                  </p>
+                  <div class="flex items-center gap-3 text-sm text-gray-400">
+                    <span v-if="message.chat">{{ message.chat }}</span>
+                    <span>{{ new Date(message.date).toLocaleString() }}</span>
+                  </div>
                 </div>
-              </div>
-              <div class="mt-3 text-sm text-gray-300">
-                {{ message.text }}
-              </div>
-              <div 
-                v-if="getMatchedKeywords(message.text).length > 0"
-                class="mt-3 text-sm bg-blue-900/40 text-blue-300 px-3 py-1.5 rounded-md inline-block"
-              >
-                Matched keywords: {{ getMatchedKeywords(message.text).join(', ') }}
+                <div class="mt-3 text-sm text-gray-300">
+                  {{ message.text }}
+                </div>
+                <div 
+                  v-if="getMatchedKeywords(message.text).length > 0"
+                  class="mt-3 text-sm bg-blue-900/40 text-blue-300 px-3 py-1.5 rounded-md inline-block"
+                >
+                  Matched keywords: {{ getMatchedKeywords(message.text).join(', ') }}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div v-if="messages.length === 0" class="text-center py-4 text-gray-400">
-          No messages yet
-        </div>
+          <div v-if="!isLoading && messages.length === 0" class="text-center py-4 text-gray-400">
+            No messages yet
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -72,7 +80,8 @@ export default defineComponent({
     const { messageLimit, keywords, channels, soundMappings, defaultSound } = storeToRefs(settingsStore);
     const messages = ref<Message[]>([]);
     const notificationSounds = ref<{ [key: string]: HTMLAudioElement }>({});
-    let audioPermissionGranted = ref(false);
+    const audioPermissionGranted = ref(false);
+    const isLoading = ref(true);
 
     // Initialize audio context and request permission
     const initializeAudio = async () => {
@@ -92,33 +101,24 @@ export default defineComponent({
       }
     };
 
-    // Load messages from local storage on mount
-    onMounted(async () => {
-      console.log('Component mounted');
-      if (!telegramService.isLoggedIn()) {
-        console.log('Not logged in, redirecting to login');
-        router.push('/login');
-        return;
-      }
-
-      // Load audio context
-      await initializeAudio();
-
-      const savedMessages = localStorage.getItem('telegramMessages');
-      console.log('Saved messages from storage:', savedMessages);
-      if (savedMessages) {
-        messages.value = JSON.parse(savedMessages);
-        console.log('Loaded messages into state:', messages.value);
-      }
-
+    // Load saved messages
+    const loadSavedMessages = () => {
       try {
-        // Initialize client first
+        const savedMessages = localStorage.getItem('telegramMessages');
+        if (savedMessages) {
+          messages.value = JSON.parse(savedMessages);
+          console.log('Loaded messages from storage:', messages.value);
+        }
+      } catch (error) {
+        console.error('Error loading messages:', error);
+      }
+    };
+
+    // Initialize client and start monitoring
+    const initializeClient = async () => {
+      try {
         await telegramService.initializeClient();
-        
-        // Try to login with saved session
         await telegramService.login('');
-        
-        // Then start message monitoring
         await telegramService.startMessageMonitoring();
         
         // Start listening for new messages
@@ -129,19 +129,56 @@ export default defineComponent({
             sender: message.sender,
             text: message.text,
             chat: message.chat,
-            date: message.date * 1000, // Convert to milliseconds
+            date: message.date * 1000,
           };
           console.log('Processed new message in view:', newMessage);
 
-          // Play notification sound if message matches any sound mapping
-          playNotificationSound(newMessage.text);
+          if (hasKeywords(newMessage.text)) {
+            playNotificationSound(newMessage.text);
+          }
 
-          messages.value = [newMessage, ...messages.value];
-          console.log('Updated messages array:', messages.value);
+          messages.value = [newMessage, ...messages.value.slice(0, messageLimit.value - 1)];
+          console.log('Updated messages array (limited):', messages.value);
           saveMessages();
         });
+
+        return true;
       } catch (error) {
-        console.error('Error starting message monitoring:', error);
+        console.error('Error initializing client:', error);
+        return false;
+      }
+    };
+
+    onMounted(async () => {
+      console.log('Component mounted');
+      isLoading.value = true;
+
+      try {
+        if (!telegramService.isLoggedIn()) {
+          console.log('Not logged in, redirecting to login');
+          router.push('/login');
+          return;
+        }
+
+        // First load saved messages
+        loadSavedMessages();
+        // Set loading to false after messages are loaded
+        isLoading.value = false;
+
+        // Initialize audio in background
+        initializeAudio().catch(error => {
+          console.warn('Audio initialization failed, will retry on user interaction:', error);
+        });
+
+        // Initialize client in background
+        initializeClient().catch(error => {
+          console.error('Error initializing client:', error);
+          router.push('/login');
+        });
+
+      } catch (error) {
+        console.error('Error during initialization:', error);
+        isLoading.value = false;
         router.push('/login');
       }
     });
@@ -174,7 +211,8 @@ export default defineComponent({
 
     // Save messages to local storage whenever they change
     const saveMessages = () => {
-      localStorage.setItem('telegramMessages', JSON.stringify(messages.value.slice(0, messageLimit.value)));
+      // Only save up to messageLimit messages
+      localStorage.setItem('telegramMessages', JSON.stringify(messages.value));
     };
 
     // Check if message contains any keywords
@@ -256,6 +294,7 @@ export default defineComponent({
       hasKeywords,
       getMatchedKeywords,
       testSound,
+      isLoading,
     };
   },
 });
