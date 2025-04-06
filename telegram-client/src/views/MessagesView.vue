@@ -1,10 +1,12 @@
 <!-- MessagesView.vue -->
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="bg-gray-800 shadow rounded-lg overflow-hidden">
-      <div class="p-4">
-        <div class="flex justify-end mb-4 items-center gap-4">
-          <div class="flex items-center gap-2">
+  <div class="max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8">
+    <h1 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 px-2 sm:px-0">Messages</h1>
+    
+    <div class="bg-gray-800 shadow rounded-none sm:rounded-lg overflow-hidden">
+      <div class="p-2 sm:p-4">
+        <div class="flex flex-col sm:flex-row sm:justify-end mb-2 sm:mb-4 items-start sm:items-center gap-2 sm:gap-4">
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
             <label class="text-sm text-gray-300">Show matched only</label>
             <button
               @click="showMatchedOnly = !showMatchedOnly"
@@ -20,7 +22,7 @@
           </div>
           <button 
             @click="testSound('beep-10.mp3')" 
-            class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+            class="w-full sm:w-auto px-2 sm:px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors inline-flex items-center justify-center gap-2"
           >
             <i class="mdi mdi-volume-high text-lg"></i>
             Notification Sound
@@ -40,7 +42,7 @@
           >
             <div class="flex items-start px-4">
               <div class="flex-1">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                   <p class="text-sm font-medium text-gray-200">
                     <template v-if="message.chat === 'Unknown Chat'">
                       {{ message.sender }} <span class="text-xs text-gray-400">(ID: {{ message.senderId }})</span>
@@ -49,12 +51,12 @@
                       <span>{{ message.chat }} <span class="text-xs text-gray-400">(ID: {{ message.chatId }})</span></span>
                     </template>
                   </p>
-                  <div class="flex items-center gap-3 text-sm text-gray-400">
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-gray-400">
                     <template v-if="message.chat === 'Unknown Chat'">
                       <span>{{ message.chat }} <span class="text-xs">(ID: {{ message.chatId }})</span></span>
                     </template>
                     <template v-else>
-                      {{ message.sender }} <span class="text-xs">(ID: {{ message.senderId }})</span>
+                      <span>{{ message.sender }} <span class="text-xs">(ID: {{ message.senderId }})</span></span>
                     </template>
                     <span>{{ new Date(message.date).toLocaleString() }}</span>
                   </div>

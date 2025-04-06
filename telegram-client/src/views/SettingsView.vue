@@ -1,24 +1,24 @@
 <!-- SettingsView.vue -->
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h1 class="text-2xl font-bold mb-6 text-gray-200">Settings</h1>
+  <div class="max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8">
+    <h1 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 px-2 sm:px-0">Settings</h1>
     
-    <div class="bg-gray-800 shadow rounded-lg p-6 space-y-8">
+    <div class="bg-gray-800 shadow rounded-none sm:rounded-lg p-3 sm:p-6 space-y-6 sm:space-y-8">
       <!-- Message Limit Section -->
       <div>
-        <h2 class="text-lg font-medium text-gray-200 mb-4">Message Display</h2>
-        <div class="space-y-4">
-          <div class="flex gap-4">
+        <h2 class="text-base sm:text-lg font-medium text-gray-200 mb-3 sm:mb-4">Message Display</h2>
+        <div class="space-y-3 sm:space-y-4">
+          <div class="flex gap-2 sm:gap-4">
             <input 
               type="number"
               v-model="messageLimit"
               min="1"
               max="1000"
-              class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-200"
+              class="flex-1 px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-200"
               placeholder="Number of messages to display"
             />
           </div>
-          <p class="text-sm text-gray-400">
+          <p class="text-xs sm:text-sm text-gray-400">
             This setting determines how many recent messages will be shown and stored locally.
           </p>
         </div>
@@ -26,19 +26,19 @@
 
       <!-- Keywords Section -->
       <div>
-        <h2 class="text-lg font-medium text-gray-200 mb-4">Message Filtering</h2>
-        <div class="space-y-4">
-          <div class="flex gap-4">
+        <h2 class="text-base sm:text-lg font-medium text-gray-200 mb-3 sm:mb-4">Message Filtering</h2>
+        <div class="space-y-3 sm:space-y-4">
+          <div class="flex gap-2 sm:gap-4">
             <input 
               v-model="newKeyword" 
               type="text" 
               placeholder="Add new keyword"
               @keyup.enter="addNewKeyword"
-              class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-200"
+              class="flex-1 px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-200"
             >
             <button 
               @click="addNewKeyword" 
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              class="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
             >
               Add
             </button>
@@ -48,47 +48,47 @@
             <span 
               v-for="(keyword, index) in keywords" 
               :key="index" 
-              class="inline-flex items-center px-3 py-1 rounded-md text-sm bg-blue-900/40 text-blue-300"
+              class="inline-flex items-center px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm bg-blue-900/40 text-blue-300"
             >
               {{ keyword }}
               <button 
                 @click="removeKeyword(index)" 
-                class="ml-2 text-blue-400 hover:text-blue-200 focus:outline-none"
+                class="ml-1 sm:ml-2 text-blue-400 hover:text-blue-200 focus:outline-none"
                 title="Remove keyword"
               >
-                <i class="mdi mdi-close text-lg"></i>
+                <i class="mdi mdi-close text-base sm:text-lg"></i>
               </button>
             </span>
           </div>
 
-          <p class="text-sm text-gray-400">
-            Messages containing these keywords will be highlighted. Add keywords to filter important messages.
+          <p class="text-xs sm:text-sm text-gray-400">
+            Messages containing these keywords will be highlighted.
           </p>
         </div>
       </div>
 
       <!-- Channels Section -->
       <div>
-        <h3 class="text-lg font-medium text-gray-200 mb-4">Excluded Channels</h3>
-        <div class="space-y-4">
-          <div class="flex gap-4">
-            <div class="flex-1 flex gap-2">
+        <h3 class="text-base sm:text-lg font-medium text-gray-200 mb-3 sm:mb-4">Excluded Channels</h3>
+        <div class="space-y-3 sm:space-y-4">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+            <div class="flex-1 flex flex-col sm:flex-row gap-2">
               <input 
                 v-model="newChannelName"
                 type="text"
-                class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                class="flex-1 px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
                 placeholder="Channel name"
               />
               <input 
                 v-model="newChannelId"
                 type="text"
-                class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                class="flex-1 px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
                 placeholder="Channel ID"
               />
             </div>
             <button 
               @click="addNewChannel"
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              class="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               Add
             </button>
@@ -97,35 +97,35 @@
             <span 
               v-for="(channel, index) in channels" 
               :key="index"
-              class="inline-flex items-center px-3 py-1 rounded-md text-sm bg-red-900/40 text-red-300"
+              class="inline-flex items-center px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm bg-red-900/40 text-red-300 break-all"
             >
               {{ channel.name }} (ID: {{ channel.id }})
               <button 
                 @click="removeChannel(index)"
-                class="ml-2 text-red-400 hover:text-red-200 focus:outline-none"
+                class="ml-1 sm:ml-2 text-red-400 hover:text-red-200 focus:outline-none"
               >
-                <i class="mdi mdi-close text-lg"></i>
+                <i class="mdi mdi-close text-base sm:text-lg"></i>
               </button>
             </span>
           </div>
-          <p class="text-sm text-gray-400">
-            Messages from these channels will be hidden from the messages page. Add both channel name and ID.
+          <p class="text-xs sm:text-sm text-gray-400">
+            Messages from these channels will be hidden.
           </p>
         </div>
       </div>
 
       <!-- Sound Mappings Section -->
-      <div class="space-y-6">
-        <div class="bg-gray-800 shadow rounded-lg">
-          <h3 class="text-lg font-medium text-gray-200 mb-4">Sound Notifications</h3>
+      <div class="space-y-4 sm:space-y-6">
+        <div class="bg-gray-800 shadow rounded-none sm:rounded-lg">
+          <h3 class="text-base sm:text-lg font-medium text-gray-200 mb-3 sm:mb-4">Sound Notifications</h3>
           
           <!-- Default Sound Selection -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-300 mb-2">Default Sound</label>
-            <div class="flex gap-4">
+          <div class="mb-4 sm:mb-6">
+            <label class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Default Sound</label>
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
               <select 
                 v-model="defaultSound"
-                class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                class="flex-1 px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
               >
                 <option v-for="sound in availableSounds" :key="sound" :value="sound">
                   {{ sound }}
@@ -133,26 +133,27 @@
               </select>
               <button 
                 @click="testSound(defaultSound)"
-                class="px-3 py-2 text-gray-400 hover:text-gray-200 transition-colors inline-flex items-center gap-2"
+                class="px-3 py-2 text-gray-400 hover:text-gray-200 transition-colors inline-flex items-center justify-center gap-2 rounded-md"
                 title="Test Default Sound"
               >
                 <i class="mdi mdi-volume-high text-lg"></i>
+                Test
               </button>
             </div>
-            <p class="mt-2 text-sm text-gray-400">
-              This sound will play for messages that match keywords without a specific sound mapping.
+            <p class="mt-2 text-xs sm:text-sm text-gray-400">
+              This sound plays for messages with keywords but no specific mapping.
             </p>
           </div>
 
           <!-- Add New Sound Mapping -->
-          <div class="mb-6 space-y-4">
-            <div class="flex gap-4">
+          <div class="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+            <div class="flex flex-col gap-2 sm:gap-4">
               <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-300 mb-2">Select Keyword</label>
-                <div class="flex gap-4">
+                <label class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">Select Keyword</label>
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
                   <select 
                     v-model="selectedKeyword"
-                    class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                    class="flex-1 px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
                   >
                     <option value="">Select a keyword</option>
                     <option 
@@ -165,7 +166,7 @@
                   </select>
                   <select 
                     v-model="newMappingSound"
-                    class="w-48 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
+                    class="w-full sm:w-48 px-2 sm:px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:border-blue-500"
                   >
                     <option v-for="sound in availableSounds" :key="sound" :value="sound">
                       {{ sound }}
@@ -173,7 +174,7 @@
                   </select>
                   <button 
                     @click="addNewSoundMapping"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    class="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     :disabled="!selectedKeyword"
                   >
                     Add
@@ -188,32 +189,32 @@
             <span 
               v-for="(mapping, index) in soundMappings" 
               :key="index"
-              class="inline-flex items-center px-3 py-1 rounded-md text-sm bg-blue-900/40 text-blue-300"
+              class="inline-flex items-center px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm bg-blue-900/40 text-blue-300 break-all"
             >
               {{ mapping.keywords[0] }} → {{ mapping.soundFile }}
               <button 
                 @click="testSound(mapping.soundFile)"
-                class="px-3 py-2 text-gray-400 hover:text-gray-200 transition-colors inline-flex items-center gap-2"
+                class="ml-1 sm:ml-2 text-gray-400 hover:text-gray-200 transition-colors inline-flex items-center rounded-md"
                 title="Test Sound"
               >
-                <i class="mdi mdi-volume-high text-lg"></i>
+                <i class="mdi mdi-volume-high text-base sm:text-lg"></i>
               </button>
               <button 
                 @click="toggleMapping(index)"
                 :class="[
-                  'ml-1 focus:outline-none',
+                  'ml-1 focus:outline-none rounded-md',
                   mapping.enabled ? 'text-green-400 hover:text-green-300' : 'text-gray-500 hover:text-gray-400'
                 ]"
                 :title="mapping.enabled ? 'Disable' : 'Enable'"
               >
-                <i class="mdi" :class="[mapping.enabled ? 'mdi-check' : 'mdi-close']"></i>
+                <i class="mdi text-base sm:text-lg" :class="[mapping.enabled ? 'mdi-check' : 'mdi-close']"></i>
               </button>
               <button 
                 @click="removeSoundMapping(index)"
-                class="ml-2 text-red-400 hover:text-red-200 focus:outline-none"
+                class="ml-1 sm:ml-2 text-red-400 hover:text-red-200 focus:outline-none rounded-md"
                 title="Remove sound mapping"
               >
-                <i class="mdi mdi-close text-lg"></i>
+                <i class="mdi mdi-close text-base sm:text-lg"></i>
               </button>
             </span>
           </div>

@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-slate-800 text-white">
+  <header class="bg-slate-800 text-white relative">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-14">
         <div class="flex items-center space-x-4">
@@ -7,7 +7,8 @@
             <i class="mdi mdi-message-text text-2xl"></i>
             Telegram Monitor
           </router-link>
-          <nav class="flex" v-if="isLoggedIn">
+          <!-- Desktop Navigation -->
+          <nav class="hidden md:flex" v-if="isLoggedIn">
             <router-link
               to="/messages" 
               class="px-4 h-14 inline-flex items-center text-sm font-medium transition-colors gap-2"
@@ -26,14 +27,59 @@
             </router-link>
           </nav>
         </div>
+        
+        <!-- Desktop Logout Button -->
         <button 
           v-if="isLoggedIn"
           @click="handleLogout" 
-          class="px-4 h-14 text-sm font-medium text-gray-300 hover:bg-slate-700 transition-colors inline-flex items-center gap-2"
+          class="hidden md:inline-flex px-4 h-14 text-sm font-medium text-gray-300 hover:bg-slate-700 transition-colors items-center gap-2"
         >
           <i class="mdi mdi-logout"></i>
           Logout
         </button>
+
+        <!-- Mobile Menu Button -->
+        <button 
+          v-if="isLoggedIn"
+          @click="isMobileMenuOpen = !isMobileMenuOpen" 
+          class="md:hidden p-2 rounded-md text-gray-300 hover:bg-slate-700 focus:outline-none"
+        >
+          <i class="mdi mdi-menu text-2xl"></i>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div 
+        v-if="isLoggedIn && isMobileMenuOpen" 
+        class="absolute top-14 left-0 right-0 z-50 bg-slate-800 border-t border-slate-700 shadow-lg md:hidden"
+      >
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          <router-link
+            to="/messages"
+            class="block px-3 py-2 rounded-md text-base font-medium transition-colors"
+            :class="[$route.path === '/messages' ? 'bg-slate-700 text-white' : 'text-gray-300 hover:bg-slate-700']"
+            @click="isMobileMenuOpen = false"
+          >
+            <i class="mdi mdi-message-text-outline mr-2"></i>
+            Messages
+          </router-link>
+          <router-link
+            to="/settings"
+            class="block px-3 py-2 rounded-md text-base font-medium transition-colors"
+            :class="[$route.path === '/settings' ? 'bg-slate-700 text-white' : 'text-gray-300 hover:bg-slate-700']"
+            @click="isMobileMenuOpen = false"
+          >
+            <i class="mdi mdi-cog mr-2"></i>
+            Settings
+          </router-link>
+          <button
+            @click="handleLogoutMobile"
+            class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-slate-700 transition-colors"
+          >
+            <i class="mdi mdi-logout mr-2"></i>
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -43,7 +89,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from 'vue';
+import { defineComponent, computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { TelegramService } from '@/services/TelegramService';
 
@@ -52,6 +98,7 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const telegramService = TelegramService.getInstance();
+    const isMobileMenuOpen = ref(false);
 
     const isLoggedIn = computed(() => telegramService.isLoggedIn());
 
@@ -64,9 +111,16 @@ export default defineComponent({
       }
     };
 
+    const handleLogoutMobile = async () => {
+      isMobileMenuOpen.value = false;
+      await handleLogout();
+    };
+
     return {
       isLoggedIn,
-      handleLogout
+      handleLogout,
+      handleLogoutMobile,
+      isMobileMenuOpen
     };
   }
 });
