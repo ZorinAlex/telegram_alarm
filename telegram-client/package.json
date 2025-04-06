@@ -12,12 +12,12 @@
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "buffer": "^6.0.3",
-    "input": "^1.0.1",
     "os-browserify": "^0.3.0",
     "pinia": "^2.1.7",
     "telegram": "^2.26.22",
-    "telegram-js": "^0.2.4",
+    "vite-plugin-node-polyfills": "^0.23.0",
     "vue": "^3.4.15",
+    "vue-i18n": "^11.1.3",
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
