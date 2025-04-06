@@ -15,7 +15,7 @@
               :class="[$route.path === '/messages' ? 'bg-slate-700 text-white' : 'text-gray-300 hover:bg-slate-700']"
             >
               <i class="mdi mdi-message-text-outline"></i>
-              Messages
+              {{ $t('header.messages') }}
             </router-link>
             <router-link 
               to="/settings" 
@@ -23,7 +23,7 @@
               :class="[$route.path === '/settings' ? 'bg-slate-700 text-white' : 'text-gray-300 hover:bg-slate-700']"
             >
               <i class="mdi mdi-cog"></i>
-              Settings
+              {{ $t('header.settings') }}
             </router-link>
           </nav>
         </div>
@@ -35,7 +35,7 @@
           class="hidden md:inline-flex px-4 h-14 text-sm font-medium text-gray-300 hover:bg-slate-700 transition-colors items-center gap-2"
         >
           <i class="mdi mdi-logout"></i>
-          Logout
+          {{ $t('header.logout') }}
         </button>
 
         <!-- Mobile Menu Button -->
@@ -61,7 +61,7 @@
             @click="isMobileMenuOpen = false"
           >
             <i class="mdi mdi-message-text-outline mr-2"></i>
-            Messages
+            {{ $t('header.messages') }}
           </router-link>
           <router-link
             to="/settings"
@@ -70,14 +70,14 @@
             @click="isMobileMenuOpen = false"
           >
             <i class="mdi mdi-cog mr-2"></i>
-            Settings
+            {{ $t('header.settings') }}
           </router-link>
           <button
             @click="handleLogoutMobile"
             class="w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-slate-700 transition-colors"
           >
             <i class="mdi mdi-logout mr-2"></i>
-            Logout
+            {{ $t('header.logout') }}
           </button>
         </div>
       </div>
@@ -92,6 +92,7 @@
 import { defineComponent, computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { TelegramService } from '@/services/TelegramService';
+import { useI18n } from 'vue-i18n';
 
 export default defineComponent({
   name: 'App',
@@ -99,6 +100,7 @@ export default defineComponent({
     const router = useRouter();
     const telegramService = TelegramService.getInstance();
     const isMobileMenuOpen = ref(false);
+    const { t } = useI18n();
 
     const isLoggedIn = computed(() => telegramService.isLoggedIn());
 

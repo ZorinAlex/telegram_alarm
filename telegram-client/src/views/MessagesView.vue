@@ -1,19 +1,19 @@
 <!-- MessagesView.vue -->
 <template>
   <div class="max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8">
-    <h1 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 px-2 sm:px-0">Messages</h1>
+    <h1 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 px-2 sm:px-0">{{ $t('messages.title') }}</h1>
     
     <div class="bg-gray-800 shadow rounded-none sm:rounded-lg overflow-hidden">
       <div class="p-2 sm:p-4">
         <div class="flex flex-col sm:flex-row sm:justify-end mb-2 sm:mb-4 items-start sm:items-center gap-2 sm:gap-4">
           <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-            <label class="text-sm text-gray-300">Show matched only</label>
+            <label class="text-sm text-gray-300">{{ $t('messages.showMatchedOnly') }}</label>
             <button
               @click="showMatchedOnly = !showMatchedOnly"
               class="relative inline-flex h-6 w-11 items-center rounded-full"
               :class="[showMatchedOnly ? 'bg-blue-600' : 'bg-gray-600']"
             >
-              <span class="sr-only">Show matched messages only</span>
+              <span class="sr-only">{{ $t('messages.showMatchedOnly') }}</span>
               <span
                 class="inline-block h-4 w-4 transform rounded-full bg-white transition"
                 :class="[showMatchedOnly ? 'translate-x-6' : 'translate-x-1']"
@@ -21,60 +21,47 @@
             </button>
           </div>
           <button 
-            @click="testSound('beep-10.mp3')" 
+            @click="testSound(defaultSound)"
             class="w-full sm:w-auto px-2 sm:px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors inline-flex items-center justify-center gap-2"
           >
             <i class="mdi mdi-volume-high text-lg"></i>
-            Notification Sound
+            {{ $t('messages.notificationSound') }}
           </button>
         </div>
         <!-- Loading state -->
         <div v-if="isLoading" class="text-center py-4 text-gray-400">
-          Loading messages...
+          {{ $t('messages.loading') }}
         </div>
         <!-- Messages list -->
         <template v-else>
-          <div 
-            v-for="message in limitedMessages" 
-            :key="message.id" 
-            class="border-b border-gray-700 last:border-0 pb-4 last:pb-0 mb-4"
-            :class="[hasKeywords(message.text) ? 'bg-blue-900/20' : '']"
-          >
-            <div class="flex items-start px-4">
-              <div class="flex-1">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
-                  <p class="text-sm font-medium text-gray-200">
-                    <template v-if="message.chat === 'Unknown Chat'">
-                      {{ message.sender }} <span class="text-xs text-gray-400">(ID: {{ message.senderId }})</span>
-                    </template>
-                    <template v-else>
-                      <span>{{ message.chat }} <span class="text-xs text-gray-400">(ID: {{ message.chatId }})</span></span>
-                    </template>
-                  </p>
-                  <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-gray-400">
-                    <template v-if="message.chat === 'Unknown Chat'">
-                      <span>{{ message.chat }} <span class="text-xs">(ID: {{ message.chatId }})</span></span>
-                    </template>
-                    <template v-else>
-                      <span>{{ message.sender }} <span class="text-xs">(ID: {{ message.senderId }})</span></span>
-                    </template>
-                    <span>{{ new Date(message.date).toLocaleString() }}</span>
+          <div class="space-y-2 sm:space-y-4">
+            <div 
+              v-for="message in limitedMessages" 
+              :key="message.id"
+              class="p-2 sm:p-4 bg-gray-700 rounded-lg"
+              :class="{ 'border border-blue-500': hasKeywords(message.text) }"
+            >
+              <div class="flex flex-col gap-1 sm:gap-2">
+                <div class="flex flex-wrap sm:flex-nowrap gap-2 text-xs sm:text-sm text-gray-400 items-center">
+                  <div class="flex flex-wrap gap-2 flex-grow">
+                    <span class="font-medium text-gray-300">
+                      {{ message.sender !== 'Unknown' ? message.sender : (message.chat !== 'Unknown Chat' ? (message.chat + ' (ID: ' + message.chatId + ')') : '') }}
+                    </span>
+                    <span>{{ $t('messages.id') }}: {{ message.id }}</span>
+                    <span v-if="message.sender !== 'Unknown' && message.chat !== 'Unknown Chat'" class="text-blue-400">{{ message.chat }} (ID: {{ message.chatId }})</span>
                   </div>
+                  <span class="hidden sm:block whitespace-nowrap">{{ new Date(message.date).toLocaleString() }}</span>
+                  <span class="sm:hidden">{{ new Date(message.date).toLocaleString() }}</span>
                 </div>
-                <div class="mt-3 text-sm text-gray-300">
-                  {{ message.text }}
-                </div>
-                <div 
-                  v-if="getMatchedKeywords(message.text).length > 0"
-                  class="mt-3 text-sm bg-blue-900/40 text-blue-300 px-3 py-1.5 rounded-md inline-block"
-                >
-                  Matched keywords: {{ getMatchedKeywords(message.text).join(', ') }}
+                <div class="text-sm sm:text-base text-gray-200">{{ message.text }}</div>
+                <div v-if="hasKeywords(message.text)" class="text-xs sm:text-sm text-blue-400">
+                  {{ $t('messages.matchedKeywords') }}: {{ getMatchedKeywords(message.text).join(', ') }}
                 </div>
               </div>
             </div>
           </div>
           <div v-if="!isLoading && messages.length === 0" class="text-center py-4 text-gray-400">
-            No messages yet
+            {{ $t('messages.noMessages') }}
           </div>
         </template>
       </div>
@@ -88,6 +75,7 @@ import { useRouter } from 'vue-router';
 import { TelegramService } from '@/services/TelegramService';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
 
 interface Message {
   id: number;
@@ -106,6 +94,7 @@ export default defineComponent({
     const telegramService = TelegramService.getInstance();
     const settingsStore = useSettingsStore();
     const { messageLimit, keywords, channels, soundMappings, defaultSound } = storeToRefs(settingsStore);
+    const { t } = useI18n();
     const messages = ref<Message[]>([]);
     const notificationSounds = ref<{ [key: string]: HTMLAudioElement }>({});
     const audioPermissionGranted = ref(false);
@@ -272,16 +261,46 @@ export default defineComponent({
       // If no keywords are selected, all messages should pass
       if (keywords.value.length === 0) return false;
       
-      return keywords.value.some(keyword => 
-        text.toLowerCase().includes(keyword.toLowerCase())
-      );
+      return keywords.value.some(keyword => {
+        // Split keyword into individual words and filter out empty strings
+        const keywordWords = keyword.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+        const messageText = text.toLowerCase();
+        
+        // For single word keywords, use simple includes
+        if (keywordWords.length === 1) {
+          return messageText.includes(keywordWords[0]);
+        }
+        
+        // For multi-word keywords, check each word exists in order but allow other words between
+        let lastIndex = -1;
+        return keywordWords.every(word => {
+          const index = messageText.indexOf(word);
+          if (index === -1) return false; // Word not found at all
+          return true; // Word found
+        });
+      });
     };
 
     // Get matched keywords for a message
     const getMatchedKeywords = (text: string): string[] => {
-      return keywords.value.filter(keyword => 
-        text.toLowerCase().includes(keyword.toLowerCase())
-      );
+      return keywords.value.filter(keyword => {
+        // Split keyword into individual words and filter out empty strings
+        const keywordWords = keyword.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+        const messageText = text.toLowerCase();
+        
+        // For single word keywords, use simple includes
+        if (keywordWords.length === 1) {
+          return messageText.includes(keywordWords[0]);
+        }
+        
+        // For multi-word keywords, check each word exists in order but allow other words between
+        let lastIndex = -1;
+        return keywordWords.every(word => {
+          const index = messageText.indexOf(word);
+          if (index === -1) return false; // Word not found at all
+          return true; // Word found
+        });
+      });
     };
 
     // Play notification sound if message matches keywords
@@ -291,27 +310,46 @@ export default defineComponent({
           await initializeAudio();
         }
 
-        // Check if any keywords match
-        const hasMatchingKeywords = keywords.value.some(keyword => 
-          text.toLowerCase().includes(keyword.toLowerCase())
-        );
+        // Get all matching keywords
+        const matchedKeywords = keywords.value.filter(keyword => {
+          // Split keyword into individual words and filter out empty strings
+          const keywordWords = keyword.toLowerCase().split(/\s+/).filter(word => word.length > 0);
+          const messageText = text.toLowerCase();
+          
+          // For single word keywords, use simple includes
+          if (keywordWords.length === 1) {
+            return messageText.includes(keywordWords[0]);
+          }
+          
+          // For multi-word keywords, check each word exists in order but allow other words between
+          let lastIndex = -1;
+          return keywordWords.every(word => {
+            const index = messageText.indexOf(word);
+            if (index === -1) return false; // Word not found at all
+            return true; // Word found
+          });
+        });
 
-        if (hasMatchingKeywords) {
-          // Find matching sound mapping
-          const matchingMapping = soundMappings.value.find(mapping => 
-            mapping.enabled && mapping.keywords.some(keyword => 
-              text.toLowerCase().includes(keyword.toLowerCase())
-            )
-          );
+        if (matchedKeywords.length > 0) {
+          // Find all matching sound mappings
+          const matchingSounds = matchedKeywords.map(keyword => {
+            const mapping = soundMappings.value.find(mapping => 
+              mapping.enabled && mapping.keywords.includes(keyword)
+            );
+            return mapping ? mapping.soundFile : defaultSound.value;
+          });
 
-          // Use either the matching sound or default sound
-          const soundToPlay = matchingMapping ? 
-            notificationSounds.value[matchingMapping.soundFile] : 
-            notificationSounds.value[defaultSound.value];
-
-          if (soundToPlay) {
-            soundToPlay.currentTime = 0;
-            await soundToPlay.play();
+          // Play sounds sequentially
+          for (const soundFile of matchingSounds) {
+            const sound = notificationSounds.value[soundFile];
+            if (sound) {
+              sound.currentTime = 0;
+              await sound.play();
+              // Wait for the sound to finish before playing the next one
+              await new Promise(resolve => {
+                sound.onended = resolve;
+              });
+            }
           }
         }
       } catch (error) {
@@ -348,6 +386,7 @@ export default defineComponent({
       testSound,
       isLoading,
       showMatchedOnly,
+      defaultSound
     };
   },
 });

@@ -4,18 +4,18 @@
     <div class="flex justify-center">
       <div class="w-full max-w-md">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Login to Telegram</h2>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">{{ $t('login.title') }}</h2>
           
           <div class="space-y-6">
             <div>
               <label for="phoneNumber" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Phone Number
+                {{ $t('login.phoneNumber') }}
               </label>
               <input 
                 id="phoneNumber"
                 v-model="phoneNumber" 
                 type="text" 
-                placeholder="+1234567890"
+                :placeholder="$t('login.phoneNumberPlaceholder')"
                 :disabled="isLoading || showCodeInput"
                 class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
               >
@@ -23,13 +23,13 @@
 
             <div v-if="showCodeInput">
               <label for="verificationCode" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Verification Code
+                {{ $t('login.verificationCode') }}
               </label>
               <input 
                 id="verificationCode"
                 v-model="verificationCode" 
                 type="text" 
-                placeholder="Enter code from Telegram"
+                :placeholder="$t('login.verificationCodePlaceholder')"
                 :disabled="isLoading"
                 @keyup.enter="handleVerificationCode"
                 class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
@@ -38,13 +38,13 @@
 
             <div v-if="showPasswordInput">
               <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                2FA Password
+                {{ $t('login.password') }}
               </label>
               <input 
                 id="password"
                 v-model="password" 
                 type="password" 
-                placeholder="Enter your 2FA password"
+                :placeholder="$t('login.passwordPlaceholder')"
                 :disabled="isLoading"
                 @keyup.enter="handleVerificationCode"
                 class="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
@@ -60,7 +60,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span>{{ buttonText }}</span>
+              <span>{{ isLoading ? $t('login.loading') : buttonText }}</span>
             </button>
           </div>
         </div>
@@ -73,12 +73,14 @@
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { TelegramService } from '@/services/TelegramService';
+import { useI18n } from 'vue-i18n';
 
 export default defineComponent({
   name: 'LoginView',
   setup() {
     const router = useRouter();
     const telegramService = TelegramService.getInstance();
+    const { t } = useI18n();
     const isLoading = ref(false);
     const showCodeInput = ref(false);
     const showPasswordInput = ref(false);
@@ -88,8 +90,8 @@ export default defineComponent({
     let codeResolver: ((code: string) => void) | null = null;
 
     const buttonText = computed(() => {
-      if (showCodeInput.value) return 'Submit Code & Password';
-      return 'Login';
+      if (showCodeInput.value) return t('login.submitCodeButton');
+      return t('login.loginButton');
     });
 
     const handleVerificationCode = async () => {
