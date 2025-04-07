@@ -1,6 +1,7 @@
 import './polyfills'
 import './assets/main.css'
 import '@mdi/font/css/materialdesignicons.css'
+import './types' // Import global types
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -10,14 +11,6 @@ import router from './router'
 import { i18n } from './i18n'
 
 // Make router available globally for debugging
-declare global {
-  interface Window {
-    router: typeof router;
-    api?: {
-      getSoundPath?: (soundFile: string) => string;
-    }
-  }
-}
 window.router = router;
 
 console.log('Starting application initialization...');

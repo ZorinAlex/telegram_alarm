@@ -78,15 +78,7 @@ import { TelegramService } from '@/services/TelegramService';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-
-// Define API interface for TypeScript
-declare global {
-  interface Window {
-    api?: {
-      getSoundPath?: (soundFile: string) => string;
-    }
-  }
-}
+import '../types';  // Import global types
 
 interface Message {
   id: number;

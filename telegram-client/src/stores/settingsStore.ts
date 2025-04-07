@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { i18n } from '@/i18n';
 
 export interface SoundMapping {
@@ -37,7 +37,9 @@ export const useSettingsStore = defineStore('settings', () => {
   const soundMappings = ref<SoundMapping[]>(initialSettings.soundMappings);
   const defaultSound = ref(initialSettings.defaultSound || 'beep-1.mp3');
   const language = ref(initialSettings.language);
-  const availableSounds = ref([
+  
+  // Available builtin sounds
+  const builtinSounds = ref([
     'beep-1.mp3',
     'beep-2.mp3',
     'балістика.mp3',
@@ -52,6 +54,57 @@ export const useSettingsStore = defineStore('settings', () => {
     'шахед.mp3',
     'відрадний.mp3'
   ]);
+  
+  // Custom sounds loaded from user data directory
+  const customSounds = ref<string[]>([]);
+  
+  // Combined available sounds (builtin + custom)
+  const availableSounds = computed(() => {
+    return [...builtinSounds.value, ...customSounds.value];
+  });
+
+  // Load custom sounds from disk
+  const loadCustomSounds = async () => {
+    if (window.api && window.api.sound) {
+      try {
+        const result = await window.api.sound.listCustom();
+        if (result.success) {
+          console.log('Custom sounds loaded:', result.sounds);
+          customSounds.value = result.sounds;
+        } else {
+          console.error('Failed to load custom sounds:', result.error);
+        }
+      } catch (error) {
+        console.error('Error loading custom sounds:', error);
+      }
+    }
+  };
+
+  // Import a new sound file
+  const importSound = async (filePath: string): Promise<string | null> => {
+    if (window.api && window.api.sound) {
+      try {
+        const result = await window.api.sound.import(filePath);
+        if (result.success) {
+          console.log('Sound imported successfully:', result.fileName);
+          
+          // Add to custom sounds if not already present
+          if (!customSounds.value.includes(result.fileName)) {
+            customSounds.value.push(result.fileName);
+          }
+          
+          return result.fileName;
+        } else {
+          console.error('Failed to import sound:', result.error);
+          return null;
+        }
+      } catch (error) {
+        console.error('Error importing sound:', error);
+        return null;
+      }
+    }
+    return null;
+  };
 
   // Watch for changes and save to localStorage
   watch(
@@ -77,7 +130,7 @@ export const useSettingsStore = defineStore('settings', () => {
   });
 
   // Load settings from localStorage
-  const loadSettings = () => {
+  const loadSettings = async () => {
     console.log('Loading settings from localStorage...');
     const savedSettings = localStorage.getItem('telegram-settings');
     console.log('Retrieved settings:', savedSettings);
@@ -96,23 +149,6 @@ export const useSettingsStore = defineStore('settings', () => {
       // Set initial i18n locale
       i18n.global.locale.value = language.value;
       
-      // Refresh available sounds
-      availableSounds.value = [
-        'beep-1.mp3',
-        'beep-2.mp3',
-        'балістика.mp3',
-        'балістика_київ.mp3',
-        'вже_близько.mp3',
-        'вокзал.mp3',
-        'жуляни.mp3',
-        'ракета.mp3',
-        'солома.mp3',
-        'тікай.mp3',
-        'чоколівка.mp3',
-        'шахед.mp3',
-        'відрадний.mp3'
-      ];
-      
       console.log('Settings loaded:', {
         messageLimit: messageLimit.value,
         keywords: keywords.value,
@@ -123,6 +159,9 @@ export const useSettingsStore = defineStore('settings', () => {
         availableSounds: availableSounds.value
       });
     }
+    
+    // Load custom sounds
+    await loadCustomSounds();
   };
 
   const addKeyword = (keyword: string) => {
@@ -195,6 +234,8 @@ export const useSettingsStore = defineStore('settings', () => {
     removeSoundMapping,
     updateSoundMapping,
     setLanguage,
-    loadSettings
+    loadSettings,
+    loadCustomSounds,
+    importSound
   };
 }); 

@@ -174,6 +174,13 @@
                 <i class="mdi mdi-volume-high text-lg"></i>
                 {{ $t('settings.soundMapping.test') }}
               </button>
+              <button 
+                @click="importCustomSound"
+                class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <i class="mdi mdi-file-import text-lg"></i>
+                Import Sound
+              </button>
             </div>
             <p class="mt-2 text-xs sm:text-sm text-gray-400">
               {{ $t('settings.soundMapping.defaultHint') }}
@@ -265,15 +272,7 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { storeToRefs } from 'pinia';
 import type { SoundMapping, Channel } from '@/stores/settingsStore';
 import { useI18n } from 'vue-i18n';
-
-// Define API interface for TypeScript
-declare global {
-  interface Window {
-    api?: {
-      getSoundPath?: (soundFile: string) => string;
-    }
-  }
-}
+import '../types';  // Import global types
 
 export default defineComponent({
   name: 'SettingsView',
@@ -382,6 +381,48 @@ export default defineComponent({
       }
     };
 
+    const importCustomSound = async () => {
+      if (!window.api || !window.api.showOpenDialog) {
+        console.error('File dialog API not available');
+        return;
+      }
+
+      try {
+        // Show file dialog to select sound file
+        const result = await window.api.showOpenDialog({
+          properties: ['openFile'],
+          filters: [
+            { name: 'Sound Files', extensions: ['mp3'] }
+          ],
+          title: 'Select Sound File'
+        });
+
+        if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+          console.log('File selection was canceled');
+          return;
+        }
+
+        const filePath = result.filePaths[0];
+        console.log('Selected sound file:', filePath);
+
+        // Import the sound file
+        const fileName = await settingsStore.importSound(filePath);
+        if (fileName) {
+          console.log('Sound file imported successfully:', fileName);
+          // Set as the selected sound for new mappings
+          newMappingSound.value = fileName;
+          // Test the imported sound
+          setTimeout(() => {
+            testSound(fileName);
+          }, 500);
+        } else {
+          console.error('Failed to import sound file');
+        }
+      } catch (error) {
+        console.error('Error importing sound file:', error);
+      }
+    };
+
     return {
       settingsStore,
       messageLimit,
@@ -404,7 +445,8 @@ export default defineComponent({
       addNewSoundMapping,
       removeSoundMapping,
       toggleMapping,
-      testSound
+      testSound,
+      importCustomSound
     };
   },
 });
