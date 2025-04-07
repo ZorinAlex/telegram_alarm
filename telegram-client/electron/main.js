@@ -265,29 +265,79 @@ app.whenReady().then(() => {
       // Handle sound files in production
       if (decodedUrl.endsWith('.mp3')) {
         let soundPath;
+        let foundPath = false;
+        
         if (isDev) {
           // In development, sound files are in the public directory
           soundPath = path.normalize(`${__dirname}/../public/${decodedUrl}`);
+          foundPath = fs.existsSync(soundPath);
         } else {
           // In production, try multiple possible locations with the normalized filename
           
           // Try resources/sounds directory first
           soundPath = path.normalize(`${__dirname}/../resources/sounds/${decodedUrl}`);
+          foundPath = fs.existsSync(soundPath);
           
-          if (!fs.existsSync(soundPath)) {
+          if (!foundPath) {
             // Try other locations if the first one fails
             const possiblePaths = [
               path.normalize(`${process.resourcesPath}/${decodedUrl}`),
               path.normalize(`${process.resourcesPath}/sounds/${decodedUrl}`),
               path.normalize(`${app.getPath('userData')}/${decodedUrl}`),
-              path.normalize(`${app.getPath('userData')}/sounds/${decodedUrl}`) // Add this path for custom imported sounds
+              path.normalize(`${app.getPath('userData')}/sounds/${decodedUrl}`)
             ];
             
             // Find first path that exists
             for (const p of possiblePaths) {
               if (fs.existsSync(p)) {
                 soundPath = p;
+                foundPath = true;
                 break;
+              }
+            }
+            
+            // If still not found, try with space/underscore variations
+            if (!foundPath) {
+              console.log('Trying filename variations...');
+              
+              // Create variations with spaces and underscores
+              const variations = [
+                decodedUrl,
+                decodedUrl.replace(/_/g, ' '),  // Replace underscores with spaces
+                decodedUrl.replace(/ /g, '_')   // Replace spaces with underscores
+              ];
+              
+              // Get the directory
+              const soundDirs = [
+                path.normalize(`${__dirname}/../resources/sounds`),
+                path.normalize(`${process.resourcesPath}/sounds`),
+                path.normalize(`${app.getPath('userData')}/sounds`)
+              ];
+              
+              // Try to find the file in each directory with each variation
+              for (const dir of soundDirs) {
+                if (fs.existsSync(dir)) {
+                  // Get all files in the directory
+                  const files = fs.readdirSync(dir);
+                  
+                  // Try to find a close match
+                  for (const file of files) {
+                    if (file.toLowerCase().endsWith('.mp3')) {
+                      // Check for exact match or variations
+                      for (const variant of variations) {
+                        if (file === variant || 
+                            file.toLowerCase() === variant.toLowerCase()) {
+                          soundPath = path.join(dir, file);
+                          foundPath = true;
+                          console.log('Found variation match:', file);
+                          break;
+                        }
+                      }
+                      if (foundPath) break;
+                    }
+                  }
+                }
+                if (foundPath) break;
               }
             }
           }
@@ -295,9 +345,9 @@ app.whenReady().then(() => {
         
         console.log('Sound file requested:', decodedUrl);
         console.log('Resolved path:', soundPath);
-        console.log('File exists:', fs.existsSync(soundPath));
+        console.log('File exists:', foundPath);
         
-        if (fs.existsSync(soundPath)) {
+        if (foundPath) {
           return callback({ path: soundPath });
         } else {
           console.error('Sound file not found:', soundPath);
