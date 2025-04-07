@@ -1,11 +1,17 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 import LoginView from '@/views/LoginView.vue'
 import MessagesView from '@/views/MessagesView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import { TelegramService } from '@/services/TelegramService'
 
+// Use hash history for production builds
+const isProduction = process.env.NODE_ENV === 'production';
+const history = isProduction 
+  ? createWebHashHistory()
+  : createWebHistory(import.meta.env.BASE_URL);
+
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history,
   routes: [
     {
       path: '/',

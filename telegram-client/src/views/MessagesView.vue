@@ -1,5 +1,7 @@
 <!-- MessagesView.vue -->
 <template>
+  <!-- Remove debug message that was added for troubleshooting -->
+  
   <div class="max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8">
     <h1 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-200 px-2 sm:px-0">{{ $t('messages.title') }}</h1>
     
@@ -77,6 +79,15 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 
+// Define API interface for TypeScript
+declare global {
+  interface Window {
+    api?: {
+      getSoundPath?: (soundFile: string) => string;
+    }
+  }
+}
+
 interface Message {
   id: number;
   senderId: string | number;
@@ -110,9 +121,22 @@ export default defineComponent({
         }
         audioPermissionGranted.value = true;
 
-        // Initialize all sound files
+        // Initialize all sound files with proper paths
         settingsStore.availableSounds.forEach(soundFile => {
-          notificationSounds.value[soundFile] = new Audio(`/${soundFile}`);
+          let soundPath;
+          if (window.api && window.api.getSoundPath) {
+            // Ensure proper URL encoding for Cyrillic filenames
+            soundPath = window.api.getSoundPath(encodeURIComponent(soundFile));
+          } else {
+            // Fallback for development
+            const isProduction = process.env.NODE_ENV === 'production';
+            soundPath = isProduction 
+              ? `${process.env.BASE_URL || ''}${encodeURIComponent(soundFile)}` 
+              : `/${encodeURIComponent(soundFile)}`;
+          }
+          
+          console.log(`Loading sound file: ${soundPath}`);
+          notificationSounds.value[soundFile] = new Audio(soundPath);
         });
       } catch (error) {
         console.error('Error initializing audio:', error);
@@ -366,8 +390,27 @@ export default defineComponent({
         }
         const sound = notificationSounds.value[soundFile];
         if (sound) {
+          console.log(`Playing sound: ${soundFile}`);
           sound.currentTime = 0;
           await sound.play();
+        } else {
+          // Sound not initialized yet, create it directly
+          let soundPath;
+          if (window.api && window.api.getSoundPath) {
+            // Ensure proper URL encoding for Cyrillic filenames
+            soundPath = window.api.getSoundPath(encodeURIComponent(soundFile));
+          } else {
+            // Fallback for development
+            const isProduction = process.env.NODE_ENV === 'production';
+            soundPath = isProduction 
+              ? `${process.env.BASE_URL || ''}${encodeURIComponent(soundFile)}` 
+              : `/${encodeURIComponent(soundFile)}`;
+          }
+          
+          console.log(`Playing sound directly from path: ${soundPath}`);
+          const audio = new Audio(soundPath);
+          audio.currentTime = 0;
+          await audio.play();
         }
       } catch (error) {
         console.error('Error playing test sound:', error);
@@ -393,6 +436,14 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.messages-container {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 20px !important;
+}
+
 .messages-view {
   max-width: 1200px;
   margin: 0 auto;

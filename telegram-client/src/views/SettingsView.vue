@@ -266,6 +266,15 @@ import { storeToRefs } from 'pinia';
 import type { SoundMapping, Channel } from '@/stores/settingsStore';
 import { useI18n } from 'vue-i18n';
 
+// Define API interface for TypeScript
+declare global {
+  interface Window {
+    api?: {
+      getSoundPath?: (soundFile: string) => string;
+    }
+  }
+}
+
 export default defineComponent({
   name: 'SettingsView',
   setup() {
@@ -349,8 +358,23 @@ export default defineComponent({
     };
 
     const testSound = async (soundFile: string) => {
-      const audio = new Audio(`/${soundFile}`);
       try {
+        // Use the app protocol handler for sound files if available
+        let soundPath;
+        if (window.api && window.api.getSoundPath) {
+          // Ensure the filename is properly encoded for URL usage
+          soundPath = window.api.getSoundPath(encodeURIComponent(soundFile));
+        } else {
+          // Fallback for development
+          const isProduction = process.env.NODE_ENV === 'production';
+          // Encode the filename properly
+          soundPath = isProduction 
+            ? `${process.env.BASE_URL || ''}${encodeURIComponent(soundFile)}` 
+            : `/${encodeURIComponent(soundFile)}`;
+        }
+        
+        console.log(`Playing sound from path: ${soundPath}`);
+        const audio = new Audio(soundPath);
         audio.currentTime = 0;
         await audio.play();
       } catch (error) {

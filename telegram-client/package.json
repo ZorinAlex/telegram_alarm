@@ -10,9 +10,10 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
     "electron:dev": "cross-env NODE_ENV=development electron .",
-    "electron:build": "npm run build && electron-builder",
+    "electron:build": "cross-env NODE_ENV=production npm run build && electron-builder && npm run copy-sounds",
     "electron:serve": "concurrently \"npm run dev\" \"npm run electron:dev\"",
-    "postinstall": "npx @electron/rebuild"
+    "postinstall": "npx @electron/rebuild",
+    "copy-sounds": "if exist dist_electron\\win-unpacked\\resources mkdir dist_electron\\win-unpacked\\resources\\sounds && copy public\\*.mp3 dist_electron\\win-unpacked\\resources\\sounds\\"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -53,26 +54,43 @@
     "appId": "com.telegram.alarm",
     "productName": "Telegram Alarm",
     "directories": {
-      "output": "dist_electron"
+      "output": "dist_electron",
+      "buildResources": "public"
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "package.json",
+      ".env"
+    ],
+    "extraResources": [
+      {
+        "from": "public",
+        "to": ".",
+        "filter": ["**/*.mp3"]
+      }
     ],
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "icon": "public/logo.png"
     },
     "mac": {
       "target": [
         "dmg"
-      ]
+      ],
+      "icon": "public/logo.png"
     },
     "linux": {
       "target": [
         "AppImage"
-      ]
-    }
+      ],
+      "icon": "public/logo.png"
+    },
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/telegram/**/*"
+    ]
   }
 }
