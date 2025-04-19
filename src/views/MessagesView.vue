@@ -49,7 +49,7 @@
                     <span class="font-medium text-gray-300">
                       {{ message.sender !== 'Unknown' ? message.sender : (message.chat !== 'Unknown Chat' ? (message.chat + ' (ID: ' + message.chatId + ')') : '') }}
                     </span>
-                    <span>{{ $t('messages.id') }}: {{ message.id }}</span>
+                    <span>{{ $t('messages.id') }}: {{ message.senderId }}</span>
                     <span v-if="message.sender !== 'Unknown' && message.chat !== 'Unknown Chat'" class="text-blue-400">{{ message.chat }} (ID: {{ message.chatId }})</span>
                   </div>
                   <span class="hidden sm:block whitespace-nowrap">{{ new Date(message.date).toLocaleString() }}</span>
@@ -244,7 +244,7 @@ export default defineComponent({
         console.log('Applying channel exclusion filter');
         filteredMessages = filteredMessages.filter(message => 
           !channels.value.some(channel => 
-            message.chatId?.toString() === channel.id
+            message.senderId?.toString() === channel.id
           )
         );
         console.log('After channel exclusion filter:', filteredMessages);

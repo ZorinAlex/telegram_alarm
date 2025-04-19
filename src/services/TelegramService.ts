@@ -175,32 +175,6 @@ export class TelegramService {
         }
     }
 
-    public async startMessageListener(keywords: string[], onMessage: (data: any) => void): Promise<void> {
-        if (!this.client) {
-            throw new Error('Client not initialized');
-        }
-
-        const { NewMessage } = await import('telegram/events');
-
-        this.client.addEventHandler(async (event: NewMessageEvent) => {
-            const message = event.message.message;
-            const sender = await event.message.getSender() as Api.User;
-            const chat = await event.message.getChat() as Api.Chat;
-
-            const messageData = {
-                text: message,
-                sender: (sender as any)?.username || (sender as any)?.first_name || 'Unknown',
-                chat: (chat as any)?.title || 'Unknown Chat',
-                timestamp: new Date(),
-                matchedKeywords: keywords.filter(keyword => 
-                    message.toLowerCase().includes(keyword.toLowerCase())
-                )
-            };
-
-            onMessage(messageData);
-        }, new NewMessage({}));
-    }
-
     public isLoggedIn(): boolean {
         return !!localStorage.getItem('telegramSession');
     }
